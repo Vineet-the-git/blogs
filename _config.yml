@@ -54,6 +54,8 @@ plugins:
 #   - vendor/ruby/
 
 markdown: kramdown
+kramdown:
+  math_engine: mathjax
 permalink: /:categories/:year/:month/:day/:title/
 paginate: 5  # Number of posts per page
 paginate_path: "/page:num/"

@@ -6,7 +6,7 @@ date: 2025-01-18
 
 ## Neural Synthesis of Binaural Speech from Mono Audio
 
-This post summarizes and explains a paper from Facebook Reality Labs (Pittsburgh, USA) that introduces a **neural rendering approach for real-time binaural sound synthesis**. In essence, the model takes a single-channel (mono) audio signal and produces a two-channel (binaural) output, conditioned on the relative position and orientation of the listener and source. The authors also provide an in-depth look at why minimizing raw waveform error using an $l_2$-loss can be problematic, and propose a modified loss function incorporating phase information for better audio quality.
+This post summarizes and explains a paper from Facebook Reality Labs (Pittsburgh, USA) that introduces a **neural rendering approach for real-time binaural sound synthesis**. In essence, the model takes a single-channel (mono) audio signal and produces a two-channel (binaural) output, conditioned on the relative position and orientation of the listener and source. The authors also provide an in-depth look at why minimizing raw waveform error using an $ l_2 $-loss can be problematic, and propose a modified loss function incorporating phase information for better audio quality.
 
 ---
 
@@ -19,9 +19,12 @@ Augmented Reality (AR) and Virtual Reality (VR) demand immersive audio that clos
 ### Problem Statement
 
 We have:
-- A **mono (single-channel)** input signal $x_{1:T}$ of length $T$.  
-- A **binaural (two-channel)** target output $\{ y^{(l)}_{1:T},\, y^{(r)}_{1:T} \}$ for the left and right ears.  
-- A **conditioning** signal $c_{1:T} \in \mathbb{R}^{14}$ describing source and listener positions (3D) and orientations (as quaternions).
+- A **mono (single-channel)** input signal $ x_{1:T} $ of length $ T $.  
+- A **binaural (two-channel)** target output 
+$$ 
+\{ y^{(l)}_{1:T},\, y^{(r)}_{1:T} \} 
+$$ for the left and right ears.  
+- A **conditioning** signal $ c_{1:T} \in \mathbb{R}^{14} $ describing source and listener positions (3D) and orientations (as quaternions).
 
 Formally, the task is to learn a function
 
@@ -29,7 +32,7 @@ $$
 \hat{y}^{(l)}_t,\; \hat{y}^{(r)}_t \;=\; f\bigl(x_{t-\Delta : t} \;\big\vert\; c_{t-\Delta : t}\bigr),
 $$
 
-where $\Delta$ is a temporal receptive field. In simpler terms, the model should transform the mono audio into binaural audio based on where the source and the listener are in 3D space.
+where $ \Delta $ is a temporal receptive field. In simpler terms, the model should transform the mono audio into binaural audio based on where the source and the listener are in 3D space.
 
 ---
 
@@ -55,26 +58,26 @@ Traditionally, **Dynamic Time Warping (DTW)** has been used to align source and 
          {\nu_{\text{sound}}},
   $$
   
-  where $p_{\text{src}, t}$ and $p_{\text{lstn}, t}$ are positions of the source and listener at time $t$.
+  where $ p_{\text{src}, t} $ and $ p_{\text{lstn}, t} $ are positions of the source and listener at time $ t $.
 
-- **Neural Correction**: A small convolutional network, WarpNet, refines the geometric warping to account for head diffraction and other nuances. The final warp field $\rho$ is constrained to be **monotonic** and **causal** via a special activation function.
+- **Neural Correction**: A small convolutional network, WarpNet, refines the geometric warping to account for head diffraction and other nuances. The final warp field $ \rho $ is constrained to be **monotonic** and **causal** via a special activation function.
 
-- **Linear Interpolation**: Because $\rho_t$ may not be an integer, the warped signal is computed by interpolating the original signal at fractional indices.
+- **Linear Interpolation**: Because $ \rho_t $ may not be an integer, the warped signal is computed by interpolating the original signal at fractional indices.
 
 This yields initial left-ear and right-ear signals that are time-aligned in a physically consistent way.
 
 #### 2. Conditioned Hyper-Convolutions
 
-After warping, a **temporal convolutional network** refines the signals. Instead of standard convolutional filters (fixed over time), the authors propose **hyper-convolutions**, where **filter weights themselves** are functions of the conditioning variables $c_{1:T}$.
+After warping, a **temporal convolutional network** refines the signals. Instead of standard convolutional filters (fixed over time), the authors propose **hyper-convolutions**, where **filter weights themselves** are functions of the conditioning variables $ c_{1:T} $.
 
 - **Standard Approach**: A typical conditional convolution adds transformations of the conditioning signal to the output.  
-- **Hyper-Convolution**: The filters become **time-varying**. A small hyper-network predicts the convolutional weights from $c_{1:T}$, letting the system adapt dynamically to changes in source-listener geometry. This is crucial for modeling moving sound sources, rotating heads, and evolving room acoustics.
+- **Hyper-Convolution**: The filters become **time-varying**. A small hyper-network predicts the convolutional weights from $ c_{1:T} $, letting the system adapt dynamically to changes in source-listener geometry. This is crucial for modeling moving sound sources, rotating heads, and evolving room acoustics.
 
 ---
 
 ### The Loss Function: Mitigating Phase Errors
 
-Simply minimizing an $l_2$-loss on raw waveforms often leads to **poor phase reconstruction**. While amplitude may be fitted well, large phase discrepancies can remain, creating audible artifacts (especially noticeable in speech). To address this, the paper adds a **phase-oriented term**:
+Simply minimizing an $ l_2 $-loss on raw waveforms often leads to **poor phase reconstruction**. While amplitude may be fitted well, large phase discrepancies can remain, creating audible artifacts (especially noticeable in speech). To address this, the paper adds a **phase-oriented term**:
 
 $$
 L\bigl(y,\hat{y}\bigr) 
@@ -83,7 +86,7 @@ L\bigl(y,\hat{y}\bigr)
 \lambda \, L_{\text{phase}}\Bigl(\text{STFT}(y),\;\text{STFT}(\hat{y})\Bigr),
 $$
 
-where $L_{\text{phase}}(\cdot)$ measures phase discrepancies in the short-time Fourier transform (STFT) domain. Experiments show that this additional term significantly improves the phase fidelity, thus yielding higher-quality binaural audio.
+where $ L_{\text{phase}}(\cdot) $ measures phase discrepancies in the short-time Fourier transform (STFT) domain. Experiments show that this additional term significantly improves the phase fidelity, thus yielding higher-quality binaural audio.
 
 ---
 
