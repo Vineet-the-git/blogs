@@ -30,7 +30,7 @@ github_username:  Vineet-the-git
 # Build settings
 theme: minima
 plugins:
-  # - jekyll-feed
+  - jekyll-feed
   - jekyll-seo-tag
 
 # Exclude from processing.
